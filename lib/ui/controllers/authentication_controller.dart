@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:get/get.dart';
 
 class AuthenticationController extends GetxController {
@@ -18,8 +19,10 @@ class AuthenticationController extends GetxController {
 
   Future<void> signup(email, password) async {
     try {
-      await FirebaseAuth.instance
+      final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
+      var uid = credential.user?.uid;
+      await FirebaseDatabase.instance.ref('users/$uid').set({"email": email});
       return Future.value();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {

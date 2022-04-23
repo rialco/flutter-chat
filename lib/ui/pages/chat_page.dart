@@ -63,7 +63,8 @@ class ChatPage extends StatelessWidget {
                       if (chatId != null) {
                         Get.to(ChatRoomPage(
                         receiverEmail: chatController.users[index].email,
-                        chatId: chatId
+                        chatId: chatId,
+                        receiverId: chatController.users[index].id,
                         )); 
                       } 
                     },

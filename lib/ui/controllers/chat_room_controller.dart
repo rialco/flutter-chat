@@ -30,7 +30,6 @@ class ChatRoomController extends GetxController {
         "content": content,
         "timestamp": messageTimestamp
       });
-      messages.add(Message(messageId, senderId, receiverId, content, messageTimestamp));
     } catch (e) {
       print('Error : $e');
       return null;

@@ -9,25 +9,52 @@ class ChatRoomController extends GetxController {
   var uuid = const Uuid();
   final databaseRef = FirebaseDatabase.instance.ref('chats');
 
-  fetchChatMessages(chatId) {
-    databaseRef.child(chatId).onChildAdded.listen((DatabaseEvent event) {
-      final data = event.snapshot.value as Map<dynamic, dynamic>;
-      var message = Message(event.snapshot.key, data['senderId'], data['receiverId'], data['content']);
+  var messageStream;
 
+  fetchChatMessages(chatId) {
+    messageStream = databaseRef.child('$chatId/messages').orderByChild('timestamp').onChildAdded.listen((DatabaseEvent event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      var message = Message(event.snapshot.key, data['senderId'], data['receiverId'], data['content'], data['timestamp']);
+      print(message);
       messages.add(message);
     });
   }
 
-  sendMessage(chatId, senderName, receiverName, content) async {
+  sendMessage(chatId, senderId, receiverId, content) async {
     final messageId = uuid.v4();
-    await databaseRef.child(chatId).child(messageId).set({
-      "senderId": senderName,
-      "receiverId": receiverName, 
-      "content": content
-    }); 
+    try {
+      var messageTimestamp = DateTime.now().millisecondsSinceEpoch;
+      await FirebaseDatabase.instance.ref('chats/$chatId/messages/$messageId').set({
+        "senderId": senderId,
+        "receiverId": receiverId, 
+        "content": content,
+        "timestamp": messageTimestamp
+      });
+      messages.add(Message(messageId, senderId, receiverId, content, messageTimestamp));
+    } catch (e) {
+      print('Error : $e');
+      return null;
+    }
+    
   }
 
-  createMessages(currentUserId, receiverId) async {
+  createMessages(chatId, currentUserId, receiverId, receiverEmail) async {
+    String name = receiverEmail.substring(0, receiverEmail.indexOf('@'));
+    String messageOne = 'Hola! mi nombre es $name.';
+    String messageTwo = 'Hola $name, mucho gusto.';
 
+    var snapshot = await databaseRef.child('$chatId/messages').get();
+    if ( snapshot.exists ) return;
+    
+    await sendMessage(chatId, receiverId, currentUserId, messageOne);
+    await sendMessage(chatId, currentUserId, receiverId, messageTwo);
+  }
+
+  clearMessages() {
+    messages.clear();
+  }
+
+  cancelStream() {
+    messageStream.cancel();
   }
 }

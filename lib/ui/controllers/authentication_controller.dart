@@ -22,7 +22,8 @@ class AuthenticationController extends GetxController {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(email: email, password: password);
       var uid = credential.user?.uid;
-      await FirebaseDatabase.instance.ref('users/$uid').set({"email": email});
+      String name = email.substring(0, email.indexOf('@'));
+      await FirebaseDatabase.instance.ref('users/$uid').set({"email": email, "name": name});
       return Future.value();
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {

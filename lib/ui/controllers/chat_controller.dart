@@ -10,22 +10,16 @@ class ChatController extends GetxController {
   final usersRef = FirebaseDatabase.instance.ref('users');
   final chatsRef = FirebaseDatabase.instance.ref('chats');
 
-
-  createChats(currentUserId) {
-    for (var user in users) { 
-      createChat(currentUserId, user.id);
-    }
-  }
-
   createChat(senderId, receiverId) async {
     final chatId = uuid.v4();
     try {
-      await chatsRef.child(chatId).set({
-        "senderId": senderId,
-        "receiverId": receiverId,
+      await chatsRef.child('$chatId/participants').set({
+        0: senderId,
+        1: receiverId,
       });
       return chatId;
     } catch (e) {
+      print('Error creando chat: $e');
       return null;
     }
   }
@@ -39,7 +33,11 @@ class ChatController extends GetxController {
 
     for (var snap in snapshots.children) { 
       final data = snap.value as Map<dynamic, dynamic>; 
-      if ( data['senderId'] == senderId && data['receiverId'] == receiverId){
+      final participants = data['participants'] as List;
+    
+      var validChat = participants.every((id) => id == senderId || id == receiverId);
+
+      if ( validChat ) {  
         return snap.key;
       }
     }
@@ -52,7 +50,7 @@ class ChatController extends GetxController {
       final data = event.snapshot.value as Map<dynamic, dynamic>;
       var newUser = ChatUser(event.snapshot.key.toString(), 'no name', data['email']);
 
-      if (event.snapshot.key != currentUserId) users.add(newUser);
+      if (event.snapshot.key != currentUserId && !users.contains(newUser)) users.add(newUser);
     });
   }
 

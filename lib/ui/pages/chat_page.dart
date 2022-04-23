@@ -22,10 +22,12 @@ class ChatPage extends StatelessWidget {
   }
 
   _createChatsAndMessages() async {
-    await chatController.createChats(authenticationController.getUid());
+    final currentId = authenticationController.getUid();
     for (var user in chatController.users) {
-      if (user.id == authenticationController.getUid()) continue;
-      await chatRoomController.createMessages(authenticationController.getUid(), user.id);
+      if (user.id == currentId) continue;
+
+      final chatId = await chatController.getChatId(currentId, user.id);
+      await chatRoomController.createMessages(chatId, currentId, user.id, user.email);
     }
   }
 
@@ -37,8 +39,8 @@ class ChatPage extends StatelessWidget {
         appBar: AppBar(
           title: Text("Chat App ${authenticationController.userEmail()}"),
           actions: [
-            const IconButton(
-                onPressed: null, icon: Icon(Icons.sailing_rounded)),
+            IconButton(
+                onPressed: _createChatsAndMessages, icon: const Icon(Icons.sailing_rounded)),
             IconButton(
                 icon: const Icon(Icons.exit_to_app),
                 onPressed: () {
@@ -58,11 +60,12 @@ class ChatPage extends StatelessWidget {
                       chatController.getChatId(authenticationController.getUid(), 
                       chatController.users[index].id);
 
-                      Get.to(ChatRoomPage(
+                      if (chatId != null) {
+                        Get.to(ChatRoomPage(
                         receiverEmail: chatController.users[index].email,
                         chatId: chatId
-                        )
-                      );
+                        )); 
+                      } 
                     },
                     child: Card(
                       child: Padding(
